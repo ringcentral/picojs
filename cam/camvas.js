@@ -27,6 +27,7 @@ function camvas(ctx, callback) {
   // By the way, the play and pause controls work as usual 
   // for streamed videos.
   this.video.setAttribute('autoplay', '1')
+  this.video.setAttribute('playsinline', '1') // important for iPhones
 
   // The video should fill out all of the canvas
   this.video.setAttribute('width', 1)
