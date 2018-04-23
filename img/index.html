@@ -28,9 +28,9 @@
 		/*
 			prepare the image and canvas context
 		*/
-		var img = document.getElementById('image');
 		var ctx = document.getElementById('canvas').getContext('2d');
-		ctx.drawImage(img, 0, 0);
+		var img = document.getElementById('image');
+		img.onload = () => ctx.drawImage(img, 0, 0);
 		/*
 			a function to transform an RGBA image to grayscale
 		*/
