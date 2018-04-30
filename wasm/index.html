@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="chrome=1">
+		<title>pico.wasm: a face detector compiled to WebAssembly</title>
+		<script src="../cam/camvas.js"></script>
+		<script>
+			fetch('wasmpico.wasm').then(function(response)
+			{
+				response.arrayBuffer().then(function(buffer)
+				{
+					WebAssembly.compile(buffer).then(function()
+					{
+						// the script 'wasmpico.js' will instantiate this object once the 'wasmpico.wasm' loads
+						var script  = document.createElement('script');
+						script.src  = 'wasmpico.js';
+						script.type = 'text/javascript';
+						script.defer = true;
+						document.getElementsByTagName('head').item(0).appendChild(script);
+
+						console.log('* wasm loaded');
+					})
+				})
+			})
+		</script>
+		<script>
+			// this function was taken from https://github.com/tehnokv/picojs/blob/master/pico.js
+			// see the following post for explanation: https://tkv.io/posts/picojs-intro/
+			var instantiate_detection_memory = function(size)
+			{
+				/*
+					initialize a circular buffer of `size` elements
+				*/
+				var n = 0, memory = [];
+				for(var i=0; i<size; ++i)
+					memory.push([]);
+				/*
+					build a function that:
+					(1) inserts the current frame's detections into the buffer;
+					(2) merges all detections from the last `size` frames and returns them
+				*/
+				function update_memory(dets)
+				{
+					memory[n] = dets;
+					n = (n+1)%memory.length;
+					dets = [];
+					for(i=0; i<memory.length; ++i)
+						dets = dets.concat(memory[i]);
+					//
+					return dets;
+				}
+				/*
+					we're done
+				*/
+				return update_memory;
+			}
+			var update_memory = instantiate_detection_memory(5); // last 5 frames
+		</script>
+	</head>
+	<script>
+		var initialized = false;
+		function button_callback() {
+			//
+			if (initialized)
+				return;
+			//
+			if (typeof Module === 'undefined') {
+				console.log('* wasm module not loaded yet')
+				return;
+			}
+			//
+			var nrows=480, ncols=640;
+			var ppixels = Module._malloc(nrows*ncols);
+			var pixels = new Uint8Array(Module.HEAPU8.buffer, ppixels, nrows*ncols);
+
+			var maxndetections = 1024;
+			var prcsq = Module._malloc(4*4*maxndetections)
+			var rcsq = new Float32Array(Module.HEAPU8.buffer, prcsq, maxndetections);
+
+			function rgba_to_grayscale(rgba, nrows, ncols) {
+				for(var r=0; r<nrows; ++r)
+					for(var c=0; c<ncols; ++c)
+						// gray = 0.2*red + 0.7*green + 0.1*blue
+						pixels[r*ncols + c] = (2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10;
+				return pixels;
+			}
+			//
+			var ctx = document.getElementsByTagName('canvas')[0].getContext('2d');
+			//
+			var processfn = function (video, dt) {
+				// render the video frame to the canvas element
+				ctx.drawImage(video, 0, 0);
+				var rgba = ctx.getImageData(0, 0, ncols, nrows).data;
+				rgba_to_grayscale(rgba, nrows, ncols);
+				//
+				params = {
+					"shiftfactor": 0.1, // move the detection window by 10% of its size
+					"minsize": 100,     // minimum size of a face
+					"maxsize": 1000,    // maximum size of a face
+					"scalefactor": 1.1  // for multiscale processing: resize the detection window by 10% when moving to the higher scale
+				}
+				// run the detector across the frame
+				// rcsq is an array representing row, column, scale and detection score
+				var ndetections = Module._find_faces(prcsq, maxndetections, ppixels, nrows, ncols, ncols, params.scalefactor, params.shiftfactor, params.minsize, params.maxsize);
+				// this is hackish as hell but gets the job done
+				// actually, we can omit this process completely but this would lead to lower detection quality
+				// (a better solution: implement all this in C)
+				var dets = [];
+				for(i=0; i<ndetections; ++i)
+					dets.push( [rcsq[4*i+0], rcsq[4*i+1], rcsq[4*i+2], rcsq[4*i+3]] );
+				dets = update_memory(dets);
+				ndetections = Math.min(maxndetections, dets.length)
+				for(i=0; i<ndetections; ++i)
+				{
+					rcsq[4*i+0] = dets[i][0]
+					rcsq[4*i+1] = dets[i][1]
+					rcsq[4*i+2] = dets[i][2]
+					rcsq[4*i+3] = dets[i][3]
+				}
+				// cluster multiple detections found around each face
+				ndetections = Module._cluster_detections(prcsq, ndetections);
+				// draw detections
+				for(i=0; i<ndetections; ++i)
+					// check the detection score
+					// if it's above the (empirical) threshold, draw it
+					if(rcsq[4*i+3]>50.0)
+					{
+						ctx.beginPath();
+						ctx.arc(rcsq[4*i+1], rcsq[4*i+0], rcsq[4*i+2]/2, 0, 2*Math.PI, false);
+						ctx.lineWidth = 3;
+						ctx.strokeStyle = 'red';
+						ctx.stroke();
+					}
+			}
+			//
+			var mycamvas = new camvas (ctx, processfn);
+			//
+			initialized = true;
+		}
+	</script>
+	<body>
+		<section>
+			<h3>pico.wasm: a face detector compiled to WebAssembly</h3>
+			<p>If your platform supports the getUserMedia API call, you can try the <b>pico.wasm</b> real-time face detector.</p>
+			<p>Simply click the button below and allow the page to access your webcam.</p>
+			<p><b>All the processing is done on the client side, i.e., without sending images to a server.</b></p>
+		</section>
+		<hr>
+		<p><center><input type="button" value="Start real-time face detection" onclick="button_callback()"></center></p>
+		<p><center><canvas width=640 height=480></canvas></center></p>
+		<hr>
+	</div>
+	</body>
+</html>
