@@ -11,5 +11,5 @@ Note that some browsers won't allow running the demo locally (without a webserve
 
 Related links:
 
-* post explaining the details: <https://tkv.io/posts/pico-to-wasm/>;
-* webcam demo: <https://tkv.io/posts/pico-to-wasm/demo>.
+* post explaining the details: <https://tehnokv.com/posts/pico-to-wasm/>;
+* webcam demo: <https://tehnokv.com/posts/pico-to-wasm/demo>.
