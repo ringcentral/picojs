@@ -4,11 +4,10 @@
 * see <https://tehnokv.com/posts/picojs-intro/> for details
 * real-time detection demo available at <https://tehnokv.com/posts/picojs-intro/demo/>
 
-The folder `img/` contains a demo that shows how to detect faces in still images.
-The folder `cam/` shows how to do webcam-based real-time face detection.
+The folder `examples/` contains a webcam and image demo that shows how to use the library.
 Use these files as documentation.
 
-The folder `wasm/` demonstrates how to compile `pico` to WebAssembly.
+The folder `wasm/` demonstrates how to compile the original `pico` to WebAssembly.
 
 ## License
 
