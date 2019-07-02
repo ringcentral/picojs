@@ -3,9 +3,10 @@
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="chrome=1">
-		<title>pico.js: face detection in JavaScript</title>
+		<title>Using pico.js and lploc.js for real-time localization of eye pupils</title>
 		<script src="camvas.js"></script>
 		<script src="../pico.js"></script>
+		<script src="../lploc.js"></script>
 		<!--<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">-->
 	</head>
 	<script>
@@ -17,7 +18,7 @@
 			if(initialized)
 				return; // if yes, then do not initialize everything again
 			/*
-				(1) prepare the pico.js face detector
+				(1) initialize the pico.js face detector
 			*/
 			var update_memory = pico.instantiate_detection_memory(5); // we will use the detecions of the last 5 frames
 			var facefinder_classify_region = function(r, c, s, pixels, ldim) {return -1.0;};
@@ -26,11 +27,24 @@
 				response.arrayBuffer().then(function(buffer) {
 					var bytes = new Int8Array(buffer);
 					facefinder_classify_region = pico.unpack_cascade(bytes);
-					console.log('* cascade loaded');
+					console.log('* facefinder loaded');
 				})
 			})
 			/*
-				(2) get the drawing context on the canvas and define a function to transform an RGBA image to grayscale
+				(2) initialize the lploc.js library with a pupil localizer
+			*/
+			var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
+			//var puplocurl = '../puploc.bin';
+			var puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/puploc.bin'
+			fetch(puplocurl).then(function(response) {
+				response.arrayBuffer().then(function(buffer) {
+					var bytes = new Int8Array(buffer);
+					do_puploc = lploc.unpack_localizer(bytes);
+					console.log('* puploc loaded');
+				})
+			})
+			/*
+				(3) get the drawing context on the canvas and define a function to transform an RGBA image to grayscale
 			*/
 			var ctx = document.getElementsByTagName('canvas')[0].getContext('2d');
 			function rgba_to_grayscale(rgba, nrows, ncols) {
@@ -42,7 +56,7 @@
 				return gray;
 			}
 			/*
-				(3) this function is called each time a video frame becomes available
+				(4) this function is called each time a video frame becomes available
 			*/
 			var processfn = function(video, dt) {
 				// render the video frame to the canvas element and extract RGBA pixel data
@@ -74,32 +88,65 @@
 					// (the constant 50.0 is empirical: other cascades might require a different one)
 					if(dets[i][3]>50.0)
 					{
+						var r, c, s;
+						//
 						ctx.beginPath();
 						ctx.arc(dets[i][1], dets[i][0], dets[i][2]/2, 0, 2*Math.PI, false);
 						ctx.lineWidth = 3;
 						ctx.strokeStyle = 'red';
 						ctx.stroke();
+						//
+						// find the eye pupils for each detected face
+						// starting regions for localization are initialized based on the face bounding box
+						// (parameters are set empirically)
+						// first eye
+						r = dets[i][0] - 0.075*dets[i][2];
+						c = dets[i][1] - 0.175*dets[i][2];
+						s = 0.35*dets[i][2];
+						[r, c] = do_puploc(r, c, s, 63, image)
+						if(r>=0 && c>=0)
+						{
+							ctx.beginPath();
+							ctx.arc(c, r, 1, 0, 2*Math.PI, false);
+							ctx.lineWidth = 3;
+							ctx.strokeStyle = 'red';
+							ctx.stroke();
+						}
+						// second eye
+						r = dets[i][0] - 0.075*dets[i][2];
+						c = dets[i][1] + 0.175*dets[i][2];
+						s = 0.35*dets[i][2];
+						[r, c] = do_puploc(r, c, s, 63, image)
+						if(r>=0 && c>=0)
+						{
+							ctx.beginPath();
+							ctx.arc(c, r, 1, 0, 2*Math.PI, false);
+							ctx.lineWidth = 3;
+							ctx.strokeStyle = 'red';
+							ctx.stroke();
+						}
 					}
 			}
 			/*
-				(4) instantiate camera handling (see https://github.com/cbrandolino/camvas)
+				(5) instantiate camera handling (see https://github.com/cbrandolino/camvas)
 			*/
 			var mycamvas = new camvas(ctx, processfn);
 			/*
-				(5) it seems that everything went well
+				(6) it seems that everything went well
 			*/
 			initialized = true;
 		}
 	</script>
 	<body>
+		<hr>
 		<section>
-			<h3>pico.js: face detection in JavaScript</h3>
-			<p>If your platform supports the getUserMedia API call, you can try the <b>pico.js</b> real-time face detector.</p>
-			<p>Simply click the button below and allow the page to access your webcam.</p>
+			<h3>Using pico.js and lploc.js for real-time localization of eye pupils</h3>
+			<p>Click the button below and allow the page to access your webcam.</p>
 			<p><b>All the processing is done on the client side, i.e., without sending images to a server.</b></p>
+			<p>More information about the algotihm is available <a href="../">here</a>.</p>
 		</section>
 		<hr>
-		<p><center><input type="button" value="Start real-time face detection" onclick="button_callback()"></center></p>
+		<p><center><input type="button" value="Start webcam feed" onclick="button_callback()"></center></p>
 		<p><center><canvas width=640 height=480></canvas></center></p>
 	</div>
 	</body>
