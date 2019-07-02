@@ -1,10 +1,14 @@
-## pico.js: a face-detection library in 200 lines of JavaScript
+## pico.js
+
+A face-detection library in 200 lines of JavaScript.
 
 * approximately 200 lines of pure JavaScript
 * see <https://tehnokv.com/posts/picojs-intro/> for details
 * real-time detection demo available at <https://tehnokv.com/posts/picojs-intro/demo/>
 
-## lploc.js: a tiny JavaScript library for real-time localization of eye pupils
+## lploc.js
+
+A tiny JavaScript library for real-time localization of eye pupils.
 
 * see <https://tehnokv.netlify.com/posts/puploc-with-trees> for details
 * real-time demo available at <https://tehnokv.netlify.com/posts/puploc-with-trees/demo>
