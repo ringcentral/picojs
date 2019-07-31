@@ -10,8 +10,8 @@ A face-detection library in 200 lines of JavaScript.
 
 A tiny JavaScript library for real-time localization of eye pupils.
 
-* see <https://tehnokv.netlify.com/posts/puploc-with-trees> for details
-* real-time demo available at <https://tehnokv.netlify.com/posts/puploc-with-trees/demo>
+* see <https://tehnokv.com/posts/puploc-with-trees> for details
+* real-time demo available at <https://tehnokv.com/posts/puploc-with-trees/demo>
 
 ## Examples
 
