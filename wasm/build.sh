@@ -1,7 +1,7 @@
 #
 #
-wget https://github.com/nenadmarkus/pico/raw/346881039e5d1f5abe64733a49886bdfd5ab2d51/rnt/picornt.c
-wget https://github.com/nenadmarkus/pico/raw/346881039e5d1f5abe64733a49886bdfd5ab2d51/rnt/cascades/facefinder
+wget https://github.com/nenadmarkus/pico/raw/c506795063f96ffeb4f9cce5d78a2c4b57fb88b0/rnt/picornt.c
+wget https://github.com/nenadmarkus/pico/raw/c506795063f96ffeb4f9cce5d78a2c4b57fb88b0/rnt/cascades/facefinder
 #
 #
 cat facefinder | hexdump -v -e '16/1 "0x%x," "\n"' > facefinder.hex

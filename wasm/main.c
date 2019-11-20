@@ -1,5 +1,7 @@
 #include "picornt.c"
 
+#include <stdio.h>
+
 int find_faces(
 	float rcsq[],
 	int maxndetections,
@@ -17,7 +19,13 @@ int find_faces(
 		#include "facefinder.hex"
 	};
 
-	return find_objects(
+	static int slot = 0;
+	static const int nmemslots = 5;
+	static const int maxslotsize = 1024;
+	static float memory[4*nmemslots*maxslotsize];
+	static int counts[nmemslots];
+
+	int n = find_objects(
 			rcsq, maxndetections,
 			facefinder,
 			0.0f,
@@ -25,4 +33,14 @@ int find_faces(
 			scalefactor, shiftfactor,
 			minfacesize, maxfacesize
 	);
+
+	n = update_memory(
+		&slot,
+		memory, counts, nmemslots, maxslotsize,
+		rcsq, n, maxslotsize
+	);
+
+	n = cluster_detections(rcsq, n);
+
+	return n;
 }

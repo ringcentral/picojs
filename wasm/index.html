@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="chrome=1">
 		<title>pico.wasm: a face detector compiled to WebAssembly</title>
-		<script src="../cam/camvas.js"></script>
+		<script src="camvas.js"></script>
 		<script>
 			fetch('wasmpico.wasm').then(function(response)
 			{
@@ -23,39 +23,6 @@
 					})
 				})
 			})
-		</script>
-		<script>
-			// this function was taken from https://github.com/tehnokv/picojs/blob/master/pico.js
-			// see the following post for explanation: https://tkv.io/posts/picojs-intro/
-			var instantiate_detection_memory = function(size)
-			{
-				/*
-					initialize a circular buffer of `size` elements
-				*/
-				var n = 0, memory = [];
-				for(var i=0; i<size; ++i)
-					memory.push([]);
-				/*
-					build a function that:
-					(1) inserts the current frame's detections into the buffer;
-					(2) merges all detections from the last `size` frames and returns them
-				*/
-				function update_memory(dets)
-				{
-					memory[n] = dets;
-					n = (n+1)%memory.length;
-					dets = [];
-					for(i=0; i<memory.length; ++i)
-						dets = dets.concat(memory[i]);
-					//
-					return dets;
-				}
-				/*
-					we're done
-				*/
-				return update_memory;
-			}
-			var update_memory = instantiate_detection_memory(5); // last 5 frames
 		</script>
 	</head>
 	<script>
@@ -102,24 +69,11 @@
 				}
 				// run the detector across the frame
 				// rcsq is an array representing row, column, scale and detection score
-				var ndetections = Module._find_faces(prcsq, maxndetections, ppixels, nrows, ncols, ncols, params.scalefactor, params.shiftfactor, params.minsize, params.maxsize);
-				// this is hackish as hell but gets the job done
-				// actually, we can omit this process completely but this would lead to lower detection quality
-				// (a better solution: implement all this in C)
-				var dets = [];
-				for(i=0; i<ndetections; ++i)
-					dets.push( [rcsq[4*i+0], rcsq[4*i+1], rcsq[4*i+2], rcsq[4*i+3]] );
-				dets = update_memory(dets);
-				ndetections = Math.min(maxndetections, dets.length)
-				for(i=0; i<ndetections; ++i)
-				{
-					rcsq[4*i+0] = dets[i][0]
-					rcsq[4*i+1] = dets[i][1]
-					rcsq[4*i+2] = dets[i][2]
-					rcsq[4*i+3] = dets[i][3]
-				}
-				// cluster multiple detections found around each face
-				ndetections = Module._cluster_detections(prcsq, ndetections);
+				var ndetections = Module._find_faces(
+					prcsq, maxndetections,
+					ppixels, nrows, ncols, ncols,
+					params.scalefactor, params.shiftfactor, params.minsize, params.maxsize
+				);
 				// draw detections
 				for(i=0; i<ndetections; ++i)
 					// check the detection score
