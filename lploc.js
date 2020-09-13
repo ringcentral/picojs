@@ -1,4 +1,4 @@
-/* This library is released under the MIT license, contact @tehnokv for more details */
+/* This library is released under the MIT license, see https://github.com/nenadmarkus/picojs */
 lploc = {}
 
 lploc.unpack_localizer = function(bytes)

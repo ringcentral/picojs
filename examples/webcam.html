@@ -34,8 +34,7 @@
 				(2) initialize the lploc.js library with a pupil localizer
 			*/
 			var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
-			//var puplocurl = '../puploc.bin';
-			var puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin'
+			var puplocurl = 'https://drone.nenadmarkus.com/data/blog-stuff/puploc.bin'
 			fetch(puplocurl).then(function(response) {
 				response.arrayBuffer().then(function(buffer) {
 					var bytes = new Int8Array(buffer);
