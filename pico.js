@@ -62,7 +62,7 @@ pico.unpack_cascade = function(bytes)
 
 		 for(let i=0; i<ntrees; ++i)
 		 {
-			idx = 1;
+			let idx = 1;
 			for(let j=0; j<tdepth; ++j)
 				// we use '>> 8' here to perform an integer division: this seems important for performance
 				idx = 2*idx + (pixels[((r+tcodes[root + 4*idx + 0]*s) >> 8)*ldim+((c+tcodes[root + 4*idx + 1]*s) >> 8)]<=pixels[((r+tcodes[root + 4*idx + 2]*s) >> 8)*ldim+((c+tcodes[root + 4*idx + 3]*s) >> 8)]);
